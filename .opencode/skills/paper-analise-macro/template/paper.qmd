@@ -1,0 +1,148 @@
+---
+lang: pt-BR
+bibliography: referencias.bib
+format:
+  pdf:
+    pdf-engine: xelatex
+    toc: false
+    number-sections: true
+    geometry:
+      - margin=2.5cm
+    fontsize: 11pt
+    code-overflow: wrap
+    code-block-bg: "#F7F7F7"
+    code-block-border-left: false
+    highlight-style: github
+    fig-width: 8
+    fig-height: 4.5
+    fig-pos: H
+header-includes:
+  - |
+    \usepackage{etoolbox}
+    \usepackage{graphicx}
+    \usepackage{hyperref}
+    \usepackage{booktabs}
+    \usepackage{threeparttable}
+    \usepackage{caption}
+    \captionsetup[table]{skip=4pt}
+    \renewcommand{\maketitle}{}
+    \AtBeginEnvironment{Shaded}{\footnotesize}
+    \AtBeginEnvironment{verbatim}{\footnotesize}
+    \AtBeginEnvironment{longtable}{\small}
+    \AtBeginEnvironment{tabular}{\small}
+execute:
+  eval: true
+  echo: true
+  warning: false
+  message: false
+---
+
+```{=latex}
+\begin{titlepage}
+\thispagestyle{empty}
+\centering
+
+% Logo (troque AM.png pela logo do seu projeto, se houver)
+\includegraphics[width=4cm]{AM.png}
+
+\vspace{0.8cm}
+
+{\huge\bfseries {{TITULO}}\par}
+
+\vspace{1em}
+
+{\Large {{SUBTITULO}}\par}
+
+\vspace{1.5em}
+
+{\large {{AUTOR}}\par}
+
+\vspace{0.5em}
+
+{\normalsize {{DATA}}\par}
+
+\vspace{0.2em}
+
+{\footnotesize Versão 1.0\par}
+
+\vspace{1.5em}
+
+\begin{minipage}{0.9\textwidth}
+\footnotesize
+\setlength{\parindent}{0pt}
+
+\noindent\textbf{Resumo.} {{RESUMO — 1 parágrafo: problema, método (LLM via API + saída
+estruturada), principais resultados e a leitura de negócio. Lembre-se da regra de ouro:
+todo número citado aqui também aparece gerado por um chunk no corpo do paper.}}
+
+\smallskip
+\noindent\textbf{Palavras-chave:} {{PALAVRA 1}}; {{PALAVRA 2}}; {{PALAVRA 3}}.
+\end{minipage}
+
+\end{titlepage}
+```
+
+# Introdução
+
+{{Apresente o problema de negócio, por que importa e qual a contribuição do trabalho.}}
+
+# Revisão da Literatura
+
+{{Trabalhos, métodos ou produtos relacionados. Cite com @chave do referencias.bib
+[@exemplo2024].}}
+
+# Metodologia e Dados
+
+{{Fontes de dados, recorte amostral e como o método percorre o CRISP-DM. Descreva o schema
+de saída estruturada usado no LLM.}}
+
+# Implementação
+
+## Configuração do ambiente
+
+```{python}
+#| echo: true
+# Importações e leitura de chaves do ambiente (.env). NUNCA escreva a chave aqui.
+import os
+# import pandas as pd, numpy as np, etc.
+# from dotenv import load_dotenv; load_dotenv()
+```
+
+## Coleta e preparação dos dados
+
+```{python}
+#| echo: true
+# Colete e prepare os dados. Mantenha o recorte enxuto (menos tokens, mais sinal).
+```
+
+## Modelagem com LLM (saída estruturada)
+
+```{python}
+#| echo: true
+# Defina um schema Pydantic e force o LLM a devolvê-lo (structured output).
+# Regra de ouro: o modelo só usa números presentes nos dados.
+```
+
+# Resultados
+
+```{python}
+#| echo: false
+#| label: tbl-principal
+#| tbl-cap: "Resultado principal (gerado por código)."
+# Gere a tabela a partir de um DataFrame. Para regressão, exporte em booktabs.
+```
+
+{{Comente os resultados referenciando @tbl-principal. Nenhum número digitado à mão.}}
+
+# Próximos Passos
+
+{{O que melhoraria numa v2.0.}}
+
+# Conclusão
+
+{{Síntese: o que foi entregue e qual o valor de negócio.}}
+
+# Referências
+
+::: {#refs}
+:::
