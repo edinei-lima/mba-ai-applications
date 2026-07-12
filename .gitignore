@@ -18,8 +18,15 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Quarto
+.quarto/
+*_files/
+
 # TeX
 *.aux
 *.log
 *.out
 *.synctex.gz
+
+# Segredos — NUNCA versionar
+.env

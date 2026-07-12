@@ -1,0 +1,536 @@
+---
+title: "Relatório Semanal — ArXiv Monitor"
+subtitle: "Extração, Classificação e Quantificação de Artigos Científicos"
+author: "ArXiv Monitor"
+date: today
+lang: pt-BR
+bibliography: referencias.bib
+format:
+  pdf:
+    pdf-engine: xelatex
+    toc: false
+    number-sections: true
+    geometry:
+      - margin=2.5cm
+    fontsize: 11pt
+    code-overflow: wrap
+    code-block-bg: "#F7F7F7"
+    code-block-border-left: false
+    highlight-style: github
+    fig-width: 8
+    fig-height: 4.5
+    fig-pos: H
+header-includes:
+  - |
+    \usepackage{etoolbox}
+    \usepackage{graphicx}
+    \usepackage{hyperref}
+    \usepackage{booktabs}
+    \usepackage{threeparttable}
+    \usepackage{caption}
+    \captionsetup[table]{skip=4pt}
+    \renewcommand{\maketitle}{}
+    \AtBeginEnvironment{Shaded}{\footnotesize}
+    \AtBeginEnvironment{verbatim}{\footnotesize}
+    \AtBeginEnvironment{longtable}{\small}
+    \AtBeginEnvironment{tabular}{\small}
+execute:
+  eval: true
+  echo: true
+  warning: false
+  message: false
+---
+
+```{=latex}
+\begin{titlepage}
+\thispagestyle{empty}
+\centering
+
+\includegraphics[width=4cm]{AM.png}
+
+\vspace{0.8cm}
+
+{\huge\bfseries Relatório Semanal — ArXiv Monitor\par}
+
+\vspace{1em}
+
+{\Large Extração, Classificação e Quantificação de Artigos Científicos\par}
+
+\vspace{1.5em}
+
+{\large Período: 2026-07-04 a 2026-07-11\par}
+
+\vspace{0.5em}
+
+{\normalsize 11 de July de 2026\par}
+
+\vspace{0.2em}
+
+{\footnotesize Versão 1.0\par}
+
+\vspace{1.5em}
+
+\begin{minipage}{0.9\textwidth}
+\footnotesize
+\setlength{\parindent}{0pt}
+
+\noindent\textbf{Resumo.} Este relatório apresenta a análise semanal de artigos
+científicos publicados no arXiv nas categorias de Inteligência Artificial (cs.AI),
+Machine Learning (cs.LG), Processamento de Linguagem Natural (cs.CL) e Visão
+Computacional (cs.CV). Foram extraídos **100** artigos via API, classificados por
+um LLM (Claude Haiku) com saída estruturada (Pydantic), dos quais **90**
+(90.0\%) foram identificados como relevantes para aplicações de negócios. A classificação
+avaliou área tecnológica, maturidade e relevância de cada artigo, seguindo a
+metodologia CRISP-DM.
+
+\smallskip
+\noindent\textbf{Palavras-chave:} arXiv; Artigos Científicos; LLM; Saída Estruturada; CRISP-DM.
+\end{minipage}
+
+\end{titlepage}
+```
+
+# Resumo
+
+Este relatório semanal analisa artigos científicos publicados no arXiv nas categorias
+de Inteligência Artificial, Machine Learning, Processamento de Linguagem Natural e
+Visão Computacional. O pipeline automatizado extrai, classifica e gera um relatório
+executivo para tomadores de decisão, seguindo a metodologia CRISP-DM.
+
+# Metodologia
+
+Seguindo o fluxo **CRISP-DM**: (i) *entendimento do negócio* — identificar artigos
+relevantes para aplicações de negócios em IA/ML/NLP/CV; (ii) *dados* — API pública do
+arXiv, período de 2026-07-04 a 2026-07-11; (iii) *preparação* — extração com retry e filtragem por
+data; (iv) *modelagem* — classificação via Claude Haiku com schema Pydantic; (v) *avaliação* —
+análise estatística dos resultados; (vi) *implantação* — este paper reprodutível.
+
+# Dados
+
+## Parâmetros da extração
+
+A extração foi realizada utilizando a API pública do arXiv com os seguintes parâmetros:
+
+- **URL base:** `https://export.arxiv.org/api/query`
+- **Período:** últimos 7 dias (2026-07-04 a 2026-07-11)
+- **Categorias de busca:**
+    - `cs.AI`
+    - `cs.LG`
+    - `cs.CV`
+    - `cs.CL`
+    - `cs.HC`
+    - `stat.ML`
+    - `cs.RO`
+    - `cs.SD`
+    - `cs.SE`
+    - `cs.CY`
+    - `cs.IR`
+    - `cs.DC`
+    - `cs.NI`
+    - `cs.AR`
+    - `math.NA`
+    - `math.PR`
+    - `cs.DS`
+    - `cs.GR`
+    - `cs.PL`
+    - `eess.SP`
+    - `cs.MA`
+    - `math.SP`
+    - `q-bio.NC`
+    - `cs.DB`
+    - `cs.IT`
+    - `math.ST`
+    - `q-bio.QM`
+    - `cs.CR`
+- **Ordenação:** por data de submissão (decrescente)
+- **Limite por página:** 100 artigos
+
+## Schema de classificação
+
+Cada artigo foi classificado com o seguinte schema Pydantic:
+
+```{python}
+#| echo: true
+from pydantic import BaseModel, Field
+from typing import Literal
+
+class ArtigoClassificado(BaseModel):
+    arxiv_id: str = Field(description="ID do artigo no arXiv")
+    titulo_pt: str = Field(description="Título traduzido para o português")
+    area_tecnologica: str = Field(description="Área tecnológica principal")
+    resumo_executivo_pt: str = Field(description="Resumo executivo em português")
+    maturidade: Literal["pesquisa_basica", "pesquisa_aplicada", "prototipo", "producao"]
+    relevancia_negocio: Literal["baixa", "media", "alta", "critica"]
+    justificativa: str = Field(description="Justificativa da relevância para negócios")
+
+print("Schema definido com sucesso!")
+```
+
+# Resultados
+
+## Resumo da extração
+
+A Tabela @tbl-resumo apresenta um resumo dos dados extraídos e classificados.
+
+```{=latex}
+\begin{table}[H]
+\centering
+\begin{threeparttable}
+\caption{Resumo da extração.}
+\label{tbl-resumo}
+\begin{tabular}{lr}
+\toprule
+Indicador & Valor \\
+\midrule
+    Total de artigos & 100 \\
+    Período & 2026-07-04 a 2026-07-11 \\
+    Relevantes & 90 (90.0\%) \\
+    Categorias arXiv & 28 \\
+    Áreas tecnológicas & 8 \\
+    Custo estimado & \$0.0200 \\ 
+\bottomrule
+\end{tabular}
+\begin{tablenotes}\footnotesize
+\item Fonte: API do arXiv, processado por LLM (Claude Haiku, temperature=0).
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+```
+
+## Distribuição por categoria arXiv
+
+A Tabela @tbl-categoria mostra a distribuição de artigos por categoria arXiv.
+
+```{=latex}
+\begin{table}[H]
+\centering
+\begin{threeparttable}
+\caption{Distribuição por categoria arXiv.}
+\label{tbl-categoria}
+\begin{tabular}{lr}
+\toprule
+Categoria & Quantidade \\
+\midrule
+    cs.AI & 44 \\
+    cs.LG & 42 \\
+    cs.CV & 31 \\
+    cs.CL & 18 \\
+    cs.HC & 5 \\
+    stat.ML & 4 \\
+    cs.RO & 4 \\
+    cs.SD & 2 \\
+    cs.SE & 2 \\
+    cs.CY & 2 \\
+    cs.IR & 2 \\
+    cs.DC & 2 \\
+    cs.NI & 2 \\
+    cs.AR & 2 \\
+    math.NA & 1 \\
+    math.PR & 1 \\
+    cs.DS & 1 \\
+    cs.GR & 1 \\
+    cs.PL & 1 \\
+    eess.SP & 1 \\
+    cs.MA & 1 \\
+    math.SP & 1 \\
+    q-bio.NC & 1 \\
+    cs.DB & 1 \\
+    cs.IT & 1 \\
+    math.ST & 1 \\
+    q-bio.QM & 1 \\
+    cs.CR & 1 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}\footnotesize
+\item Fonte: API do arXiv, processado por LLM (Claude Haiku, temperature=0).
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+```
+
+## Distribuição por área tecnológica
+
+A Tabela @tbl-area apresenta a distribuição por área tecnológica identificada pelo LLM.
+
+```{=latex}
+\begin{table}[H]
+\centering
+\begin{threeparttable}
+\caption{Distribuição por área tecnológica.}
+\label{tbl-area}
+\begin{tabular}{lr}
+\toprule
+Área Tecnológica & Quantidade \\
+\midrule
+    LLM & 29 \\
+    Visão Computacional & 24 \\
+    IA Generativa & 22 \\
+    MLOps & 11 \\
+    Aprendizado por Reforço & 6 \\
+    Segurança em IA & 4 \\
+    Outra & 3 \\
+    Robótica & 1 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}\footnotesize
+\item Fonte: API do arXiv, processado por LLM (Claude Haiku, temperature=0).
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+```
+
+## Distribuição por maturidade
+
+A Tabela @tbl-maturidade mostra o nível de maturidade tecnológica dos artigos.
+
+```{=latex}
+\begin{table}[H]
+\centering
+\begin{threeparttable}
+\caption{Distribuição por maturidade tecnológica.}
+\label{tbl-maturidade}
+\begin{tabular}{lr}
+\toprule
+Maturidade & Quantidade \\
+\midrule
+    pesquisa\_aplicada & 80 \\
+    pesquisa\_basica & 5 \\
+    producao & 3 \\
+    prototipo & 12 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}\footnotesize
+\item Fonte: API do arXiv, processado por LLM (Claude Haiku, temperature=0).
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+```
+
+## Top 5 artigos por relevância
+
+A Tabela @tbl-top5 apresenta os 5 artigos com maior relevância para negócios.
+
+```{=latex}
+\begin{table}[H]
+\centering
+\begin{threeparttable}
+\caption{Top 5 artigos por relevância para negócios.}
+\label{tbl-top5}
+\begin{tabular}{llll}
+\toprule
+\# & Título & Área & Relevância \\
+\midrule
+    1 & AUTOPILOT VQA: Avaliação de Modelos Visão-Linguagem para Com & Visão Computacional & critica \\
+    2 & HumanForge: Um Benchmark de Vídeo Deepfake Centrado em Human & Visão Computacional & critica \\
+    3 & MPFlow: Aprendizado de Otimização de Fluxo Máximo com Orçame & Aprendizado por Reforço & critica \\
+    4 & As Transformações Revelam a Verdade? Aprendizado de Resíduos & Visão Computacional & critica \\
+    5 & UltraX: Refinamento de Dados de Pré-Treinamento em Escala co & LLM & critica \\
+
+\bottomrule
+\end{tabular}
+\begin{tablenotes}\footnotesize
+\item Fonte: API do arXiv, processado por LLM (Claude Haiku, temperature=0).
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+```
+
+## Evolução diária
+
+A Figura @fig-diaria mostra a distribuição de publicações por dia no período analisado.
+
+```{python}
+#| echo: false
+#| label: fig-diaria
+#| fig-cap: "Publicações por dia no período analisado."
+import json
+import matplotlib.pyplot as plt
+from collections import Counter
+from pathlib import Path
+
+# Carregar dados do classificado.json
+classificado = Path("classificado.json")
+dados = json.loads(classificado.read_text(encoding="utf-8"))
+artigos = dados.get("artigos", [])
+
+datas = Counter(a.get("data_publicacao", "")[:10] for a in artigos)
+datas_ordenadas = sorted(datas.items())
+
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.bar([d[0] for d in datas_ordenadas], [d[1] for d in datas_ordenadas], color="#18a0d7")
+ax.set_xlabel("Data")
+ax.set_ylabel("Quantidade")
+ax.set_title("Publicações por dia")
+plt.xticks(rotation=45, ha="right")
+plt.tight_layout()
+plt.show()
+```
+
+## Custo estimado
+
+A Tabela @tbl-custo apresenta a estimativa de custo da classificação via API Anthropic.
+
+```{=latex}
+\begin{table}[H]
+\centering
+\begin{threeparttable}
+\caption{Custo estimado da classificação.}
+\label{tbl-custo}
+\begin{tabular}{lr}
+\toprule
+Métrica & Valor \\
+\midrule
+Total de tokens & 80,000 \\
+Custo por artigo & \$0.000200 \\
+Custo total & \$0.0200 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}\footnotesize
+\item Estimativa baseada em 800 tokens por artigo (input + output). Preço Claude Haiku 4.5: \$0.25/1M tokens.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+```
+
+# Lista de Artigos
+
+## Todos os artigos
+
+A Tabela @tbl-artigos lista todos os artigos extraídos e classificados no período.
+
+```{=latex}
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{threeparttable}
+\caption{Todos os artigos extraídos no período.}
+\label{tbl-artigos}
+\begin{tabular}{llllll}
+\toprule
+Data & Título & Área & Maturidade & Relevância & Resumo \\
+\midrule
+    2026-07-09 & Wat3R: Aprendizado de Geometria 3D Subaquática sem & Visão Computacional & pesquisa\_aplicada & alta & Wat3R é um framework de aprendizado semi-supervisionado cross-domain que adapta  \\
+    2026-07-09 & ZipDepth: Levando Estimativa de Profundidade Monoc & Visão Computacional & prototipo & alta & ZipDepth é uma rede compacta de estimativa de profundidade monocular com apenas  \\
+    2026-07-09 & LongE2V: Reconstrução, Predição e Interpolação de  & IA Generativa & pesquisa\_aplicada & alta & LongE2V é uma abordagem inovadora que utiliza modelos de difusão de vídeo pré-tr \\
+    2026-07-09 & Particionamento Baseado em Geometria e Gradiente p & Visão Computacional & pesquisa\_aplicada & alta & O artigo apresenta PanoLOG, um framework de reconstrução 3D para cenas panorâmic \\
+    2026-07-09 & UniClawBench: Um Benchmark Universal para Agentes  & LLM & pesquisa\_aplicada & alta & UniClawBench é o primeiro benchmark orientado por capacidades para avaliar agent \\
+    2026-07-09 & OPSD-V: Auto-Destilação em Política para Pós-Trein & Visão Computacional & pesquisa\_aplicada & alta & OPSD-V é um paradigma de auto-destilação em política para otimizar modelos de di \\
+    2026-07-09 & Aprimorando a Geração Panorâmica em Contexto atrav & Visão Computacional & pesquisa\_aplicada & alta & Canvas360 é um framework de dois estágios para geração panorâmica em contexto qu \\
+    2026-07-09 & OpenCoF: Aprendendo a Raciocinar Através da Geraçã & IA Generativa & pesquisa\_aplicada & alta & O artigo apresenta OpenCoF, um framework que integra um dataset de 17K vídeos de \\
+    2026-07-09 & Ideias Têm Genomas: Avaliação de Raciocínio sobre  & LLM & pesquisa\_aplicada & alta & O artigo apresenta IdeaGene-Bench, um benchmark para avaliar o raciocínio de sis \\
+    2026-07-09 & Precisão da Pontuação ao Longo da Difusão Direta N & IA Generativa & pesquisa\_basica & media & O trabalho demonstra que pequenos erros de marginal direto em modelos de difusão \\
+    2026-07-09 & MulTTiPop: Um Dataset de Transcrição Multifaixa pa & Outra & pesquisa\_aplicada & media & MulTTiPop é um dataset de 572 segmentos de música pop (3,5 horas de áudio) com g \\
+    2026-07-09 & SLORR: Regularização de Baixo Rank Simples e Efici & MLOps & pesquisa\_aplicada & alta & SLORR é um framework stateless e eficiente para regularização de baixo rank dura \\
+    2026-07-09 & Uso de Assistentes de Aprendizagem Baseados em IA  & LLM & producao & alta & Análise descritiva em larga escala do uso de um assistente de aprendizagem basea \\
+    2026-07-09 & Redução de Dimensionalidade Encontra Ciência de Re & Outra & pesquisa\_aplicada & media & O trabalho explora o potencial do grafo k-vizinhos-mais-próximos (kNN) construíd \\
+    2026-07-09 & AUTOPILOT VQA: Avaliação de Modelos Visão-Linguage & Visão Computacional & pesquisa\_aplicada & critica & O artigo apresenta AUTOPILOT-VQA, um benchmark de visual question answering cent \\
+    2026-07-09 & ARDY: Difusão Autorregressiva com Representação Hí & IA Generativa & prototipo & alta & ARDY é um framework de geração de movimento 3D humano em tempo real que combina  \\
+    2026-07-09 & Fluxo de Trabalho como Conhecimento: Persistência  & LLM & pesquisa\_basica & alta & O artigo propõe um modelo conceitual inspirado em Lisp para representar fluxos d \\
+    2026-07-09 & A Ilusão da Equivalência: Caracterização Estatísti & LLM & pesquisa\_aplicada & alta & O artigo demonstra que métricas convencionais como acurácia e perplexidade falha \\
+    2026-07-09 & Super Pesos em LLMs e o Fracasso do Treinamento Se & LLM & pesquisa\_aplicada & alta & O trabalho investiga Super Pesos em LLMs (parâmetros cuja remoção degrada signif \\
+    2026-07-09 & Validade de LLMs como anotadores de dados: AMALIA  & LLM & pesquisa\_aplicada & alta & O estudo avalia a validade do modelo de linguagem português AMALIA-9B como anota \\
+    2026-07-09 & WaspMOT: Um Benchmark para Rastreamento Multi-Obje & Visão Computacional & pesquisa\_aplicada & media & WaspMOT é um novo benchmark para rastreamento multi-objeto de longo prazo, conte \\
+    2026-07-09 & Pose-para-Biomecânica: Conectando Estimação de Pos & Visão Computacional & pesquisa\_aplicada & alta & O trabalho apresenta BioModule, um módulo transformer temporal leve que converte \\
+    2026-07-09 & Palácio da Memória Latente: Raciocínio para Contro & Aprendizado por Reforço & pesquisa\_aplicada & alta & O trabalho apresenta Latent Memory Palace (LMP), um método que habilita política \\
+    2026-07-09 & Aprendizado Profundo para Cancelamento Conjunto de & IA Generativa & pesquisa\_aplicada & alta & O artigo apresenta um framework de aprendizado profundo unificado que resolve o  \\
+    2026-07-09 & Lembre-se Quando Importa: Agente de Memória Proati & IA Generativa & pesquisa\_aplicada & alta & O artigo propõe um agente de memória proativa que funciona em paralelo com agent \\
+    2026-07-09 & LTM: Modelo de Terreno em Larga Escala para Paisag & Visão Computacional & prototipo & alta & O artigo propõe um framework multi-modal para reconstrução 3D de terrenos em lar \\
+    2026-07-09 & HumanForge: Um Benchmark de Vídeo Deepfake Centrad & Visão Computacional & pesquisa\_aplicada & critica & HumanForge é um dataset de grande escala e multi-paradigma para detecção de fals \\
+    2026-07-09 & MPFlow: Aprendizado de Otimização de Fluxo Máximo  & Aprendizado por Reforço & producao & critica & O trabalho aborda a otimização de posicionamento de liquidez na Rede Lightning d \\
+    2026-07-09 & Você Precisa de um Modelo de Fronteira como Verifi & LLM & pesquisa\_aplicada & alta & O artigo investiga a calibração de juízes LLM para avaliar a qualidade de citaçõ \\
+    2026-07-09 & ProjAgent: Recuperação de Similaridade Procedural  & LLM & pesquisa\_aplicada & alta & ProjAgent é um sistema de geração de código em nível de repositório que introduz \\
+    2026-07-09 & Uma Investigação Prática de Decodificação Especula & LLM & pesquisa\_aplicada & alta & O artigo investiga técnicas de decodificação especulativa relaxada sem treinamen \\
+    2026-07-09 & SAM-MT: Segmentação de Vídeo Multi-Alvo Interativa & Visão Computacional & prototipo & alta & SAM-MT estende o Segment Anything 2 para segmentação de vídeo multi-alvo em temp \\
+    2026-07-09 & SolarChain-Eval: Um Benchmark Restrito por Física  & Aprendizado por Reforço & pesquisa\_aplicada & alta & SolarChain-Eval é um benchmark para avaliar agentes econômicos autônomos em merc \\
+    2026-07-09 & Stem de Características Multi-Resolução para Segme & Visão Computacional & pesquisa\_aplicada & alta & O trabalho aborda a segmentação de lesões em Retinopatia Diabética através de um \\
+    2026-07-09 & As Transformações Revelam a Verdade? Aprendizado d & Visão Computacional & pesquisa\_aplicada & critica & O trabalho propõe GenRes e GenRes++, frameworks inovadores para detecção de imag \\
+    2026-07-09 & Reamostrar ou Redirecionar? Seleção de Modelo em T & LLM & pesquisa\_aplicada & alta & O trabalho aborda a seleção de modelos em tempo de teste para LLMs sob restriçõe \\
+    2026-07-09 & WebSwarm: Orquestração Recursiva Multi-Agente para & LLM & pesquisa\_aplicada & alta & WebSwarm é um framework de delegação recursiva que orquestra múltiplos agentes b \\
+    2026-07-09 & EdgeRefine: Equilíbrio Privacidade-Utilidade para  & Segurança em IA & pesquisa\_aplicada & alta & EdgeRefine é um framework de privacidade diferencial local que melhora o equilíb \\
+    2026-07-09 & Mecanismos Formais para Estabilidade de Mercado em & IA Generativa & pesquisa\_aplicada & alta & O estudo investiga mecanismos formais capazes de manter a estabilidade de mercad \\
+    2026-07-09 & Aprendizado Federado Descentralizado Seguro via Go & MLOps & pesquisa\_aplicada & alta & O artigo propõe gspDAG-FL, um framework de aprendizado federado descentralizado  \\
+    2026-07-09 & Ensino de Máquina Multi-Modal e Multi-Ambiente par & Aprendizado por Reforço & pesquisa\_aplicada & alta & O artigo aborda o desafio de alinhar agentes autônomos com intenções humanas atr \\
+    2026-07-09 & UltraX: Refinamento de Dados de Pré-Treinamento em & LLM & pesquisa\_aplicada & critica & UltraX é um framework de refinamento de dados de pré-treinamento em larga escala \\
+    2026-07-09 & BiSCo-LLM: Codificação Esférica Binária Sem Busca  & LLM & pesquisa\_aplicada & critica & BiSCo-LLM apresenta um framework de codificação esférica binária sem codebook pa \\
+    2026-07-09 & DominoTree: Rascunho Estruturado em Árvore Condici & LLM & prototipo & alta & DominoTree é um método de decodificação especulativa que acelera a inferência de \\
+    2026-07-09 & Direcionamento do Treinamento de Redes Neurais atr & IA Generativa & pesquisa\_aplicada & alta & O trabalho apresenta uma abordagem inovadora para orientar o treinamento de rede \\
+    2026-07-09 & Pré-treinamento Nativo de Vídeo-Ação para Controle & Robótica & producao & critica & LingBot-VA 2.0 é um modelo de fundação vídeo-ação desenvolvido especificamente p \\
+    2026-07-09 & As complexidades da inteligência artificial conver & LLM & pesquisa\_aplicada & critica & O artigo analisa 2.053 conversas reais entre pacientes e chatbots de saúde basea \\
+    2026-07-09 & Quando Autoencoders Esparsos Estruturados Aprendem & Visão Computacional & pesquisa\_aplicada & alta & O artigo propõe Structured Sparse AutoEncoders (S²AE) para melhorar a interpreta \\
+    2026-07-09 & Rumo à Terapia de Precisão em Carcinoma Hepatocelu & LLM & prototipo & critica & HCC-STAR é um modelo de linguagem grande clinicamente alinhado que lê narrativas \\
+    2026-07-09 & É Preciso um MAESTRO para Podar Especialistas Ruin & LLM & pesquisa\_aplicada & alta & O artigo apresenta MAESTRO, um framework de poda estruturada para modelos de lin \\
+    2026-07-09 & Aprendizado Profundo Federado para Previsão de Ris & MLOps & pesquisa\_aplicada & critica & O estudo apresenta uma abordagem de aprendizado profundo federado para previsão  \\
+    2026-07-09 & Tomada de Decisão Bayesiana Robusta sob Incerteza  & Segurança em IA & pesquisa\_aplicada & alta & O artigo propõe um método de design experimental robusto que integra teoria de d \\
+    2026-07-09 & Estabilidade Espectral da Máquina de Aprendizado E & MLOps & pesquisa\_aplicada & media & O artigo analisa a estabilidade numérica da Máquina de Aprendizado Extremo (ELM) \\
+    2026-07-09 & ImputeViz: Um Painel de Análise Visual para Diagnó & MLOps & prototipo & alta & ImputeViz é um painel de análise visual integrado que facilita o diagnóstico de  \\
+    2026-07-09 & Fusão de Especialistas Cross-Modal Ponderada por S & IA Generativa & pesquisa\_aplicada & alta & O artigo propõe uma abordagem de fusão adaptativa guiada por XAI (XAI-guided ada \\
+    2026-07-09 & Switch-Reasoner: Aprender Quando Pensar em Mistura & IA Generativa & pesquisa\_aplicada & alta & Switch-Reasoner é um framework baseado em GRPO que permite que Modelos Multimoda \\
+    2026-07-09 & SMetric: Repensando o Agendamento de LLM para Serv & LLM & pesquisa\_aplicada & critica & O artigo aborda o agendamento de requisições em LLMs para sistemas de agentes, i \\
+    2026-07-09 & Teoria da Contravariância: Alinhamento Forte para  & IA Generativa & pesquisa\_basica & media & O trabalho formaliza a teoria da contravariância para redes neurais profundas, d \\
+    2026-07-09 & CAAD: Detecção de Anomalias em Séries Temporais Mu & MLOps & pesquisa\_aplicada & alta & O framework CAAD propõe uma abordagem inovadora para detecção de anomalias em si \\
+    2026-07-09 & CommuniWave: Um Modelo de Aprendizado de Máquina p & Visão Computacional & prototipo & alta & CommuniWave é um modelo de aprendizado de máquina que detecta e quantifica o gra \\
+    2026-07-09 & Gargalos Estruturais na Representação de Frequênci & IA Generativa & pesquisa\_aplicada & alta & O artigo identifica gargalos estruturais em codificadores convolucionais de áudi \\
+    2026-07-09 & VocaDet: Detecção e Segmentação de Objetos em Voca & Visão Computacional & pesquisa\_aplicada & alta & VocaDet é um framework de detecção e segmentação de objetos em vocabulário abert \\
+    2026-07-09 & Melhorando a Efetividade da Busca Ad-hoc para Recu & LLM & pesquisa\_aplicada & alta & O artigo propõe model merging como estratégia sem treinamento adicional para cri \\
+    2026-07-09 & DocMaster: Um Sistema Consciente de Estrutura Hier & LLM & prototipo & alta & DocMaster é um sistema de análise de documentos que preserva estruturas hierárqu \\
+    2026-07-09 & Correspondência de Procrustes em Alta Dimensão via & Outra & pesquisa\_basica & media & O artigo apresenta um algoritmo polinomial para resolver o problema de correspon \\
+    2026-07-09 & Whareformer: Aprendendo a Rastrear O Que Está Onde & Visão Computacional & pesquisa\_aplicada & alta & O Whareformer é um modelo baseado em transformers que resolve a tarefa OSNOM (Ou \\
+    2026-07-09 & Quando o Juiz Muda, a Medição Também Muda: Auditor & LLM & pesquisa\_aplicada & critica & O trabalho identifica um problema crítico de validade de medição em sistemas de  \\
+    2026-07-09 & Descoberta e geração de estímulos guiada por IA pa & IA Generativa & pesquisa\_aplicada & alta & O trabalho apresenta um framework guiado por modelos de IA para descobrir e tran \\
+    2026-07-09 & Pare de Adivinhar Quando Parar de Testar: Avaliaçã & MLOps & pesquisa\_aplicada & alta & O artigo propõe um framework adaptativo de avaliação sequencial para modelos de  \\
+    2026-07-09 & Além de cadeiras de rodas e vendas: Investigando e & IA Generativa & pesquisa\_aplicada & alta & O trabalho apresenta INCLUDE-BENCH, o primeiro benchmark em larga escala para av \\
+    2026-07-09 & Modelos de Vídeo-Linguagem Egocêntricos Capturam T & Visão Computacional & pesquisa\_aplicada & alta & O artigo propõe um novo paradigma de aprendizado para reconhecimento de interaçã \\
+    2026-07-09 & Avaliação Sistemática de Estratégias de Agendament & MLOps & pesquisa\_aplicada & alta & Este trabalho realiza uma avaliação sistemática de 25 estratégias de agendamento \\
+    2026-07-09 & Representações CT-CLIP para Predição de Sobrevida  & Visão Computacional & pesquisa\_aplicada & alta & O estudo avalia o uso de representações de um modelo de fundação específico de d \\
+    2026-07-09 & Explicabilidade entre sementes usando Autoencodifi & LLM & pesquisa\_aplicada & media & O trabalho apresenta um método de autoencodificador esparso condicionado por Pro \\
+    2026-07-09 & Agente Multimodal Estruturado Cognitivamente para  & IA Generativa & prototipo & alta & Propõe um agente multimodal que externaliza informações visuais em memória episó \\
+    2026-07-09 & A Divisão de Acesso ao Contexto: Arquitetura em Ní & IA Generativa & pesquisa\_aplicada & alta & O artigo introduz o conceito de "Divisão de Acesso ao Contexto" (CAD) como uma d \\
+    2026-07-09 & Otimização da Diversidade de Ensemble para Supervi & LLM & pesquisa\_aplicada & alta & O artigo apresenta Ensemble Diversity Optimization (EDO), um framework que otimi \\
+    2026-07-09 & Rewiring de Grafo Temporal Consciente de Drift (DA & LLM & pesquisa\_aplicada & alta & O artigo apresenta DATGR, um framework que modela a evolução de conceitos em tex \\
+    2026-07-09 & VEGAS: Avaliação de Legendas de Vídeo Alinhadas ao & Visão Computacional & pesquisa\_aplicada & alta & VEGAS é uma métrica de avaliação de legendas de vídeo que incorpora dados de ras \\
+    2026-07-09 & Modelagem de Transportes Multi-Modalidade no Domín & MLOps & pesquisa\_aplicada & alta & O artigo propõe FreMo, um método leve e eficaz para modelagem de transportes mul \\
+    2026-07-09 & MatBind: Um Espaço de Embedding Compartilhado para & IA Generativa & pesquisa\_aplicada & alta & MatBind é um framework de aprendizado contrastivo que alinha quatro modalidades  \\
+    2026-07-09 & Aplicando Aprendizado Preditivo no Estilo JEPA a I & IA Generativa & pesquisa\_aplicada & alta & O trabalho explora a aplicação de aprendizado preditivo no estilo JEPA (Joint-Em \\
+    2026-07-09 & Dois Eixos de Abstenção em LLMs: Correção de Respo & LLM & pesquisa\_aplicada & alta & O trabalho demonstra que modelos de linguagem devem recusar dois tipos distintos \\
+    2026-07-09 & Previsão de Agendamento Espaço-Temporal sob Atraso & IA Generativa & pesquisa\_aplicada & alta & O artigo propõe um framework preditivo baseado em Redes Neurais Gráficas Espaço- \\
+    2026-07-09 & Predição do Potencial de Viticultura através de um & Visão Computacional & prototipo & alta & O trabalho apresenta uma solução de ensemble combinando U-Net e o modelo de fund \\
+    2026-07-09 & Eficiência Estatística e Inferência em Aprendizado & Aprendizado por Reforço & pesquisa\_basica & media & Este artigo estuda a eficiência estatística do aprendizado por reforço distribuc \\
+    2026-07-09 & ADORN: Tratamento Adaptativo de Desvio em Open RAN & Aprendizado por Reforço & pesquisa\_aplicada & alta & O trabalho propõe uma abordagem adaptativa baseada em Q-learning para gerenciar  \\
+    2026-07-09 & DeltaV: Pensamento com Atualizações de Estado Visu & IA Generativa & pesquisa\_aplicada & alta & DeltaV é um modelo multimodal unificado que substitui a geração de imagens compl \\
+    2026-07-09 & Predição de Fertilidade Masculina Usando Machine L & MLOps & pesquisa\_aplicada & alta & Este estudo aplica algoritmos de machine learning para classificar o status de f \\
+    2026-07-09 & FPGN: Redefinindo Aceleração Neural Baseada em Por & MLOps & prototipo & alta & FPGN é um framework end-to-end que otimiza a inferência de redes neurais em FPGA \\
+    2026-07-09 & OmniFood-Bench: Avaliação de Modelos de Visão-Ling & Visão Computacional & pesquisa\_aplicada & critica & OmniFood-Bench é um benchmark abrangente que avalia modelos de visão-linguagem e \\
+    2026-07-09 & Detecção de Bombas de Lógica em Escada em Programa & Segurança em IA & pesquisa\_aplicada & critica & O trabalho apresenta ESBMC-LLB, uma ferramenta de verificação formal que detecta \\
+    2026-07-09 & Quando Você Só Tem Fala Sintética: Melhor Chamar G & LLM & pesquisa\_aplicada & alta & O artigo aborda a adaptação de modelos de reconhecimento de fala (ASR) baseados  \\
+    2026-07-09 & Track2Map: SLAM Deformável Online com Otimização d & Visão Computacional & pesquisa\_aplicada & critica & Track2Map é um pipeline online de Gaussian Splatting 3D que otimiza conjuntament \\
+    2026-07-09 & Além da Retropropagação: Método de Monte Carlo Pod & IA Generativa & pesquisa\_aplicada & media & O artigo demonstra que um algoritmo de Monte Carlo simples e sem gradientes pode \\
+    2026-07-09 & DrugGen 2: Um modelo de linguagem consciente de do & IA Generativa & pesquisa\_aplicada & critica & DrugGen-2 é um modelo generativo baseado em GPT-2 que projeta moléculas pequenas \\
+    2026-07-09 & Framework Multi-Agente Orientado por Teoria dos Jo & LLM & pesquisa\_aplicada & alta & O trabalho apresenta G-Frame, um framework multi-agente adaptativo que integra p \\
+    2026-07-09 & Trocando Rostos, Preservando Características: Um P & Visão Computacional & pesquisa\_aplicada & alta & O trabalho apresenta um pipeline de cinco estágios para proteger a privacidade d \\
+    2026-07-09 & TRACE: Uma Marca d'Água de Atribuição Robusta de D & Segurança em IA & pesquisa\_aplicada & critica & TRACE é a primeira marca d'água para agentes LLM que resiste a adversários com a \\
+    2026-07-09 & Compressão de Prompts via Agregação de Ativações & LLM & pesquisa\_aplicada & alta & O trabalho propõe um método para comprimir prompts de instruções em um único vet \\
+
+\bottomrule
+\end{tabular}
+\begin{tablenotes}\footnotesize
+\item Fonte: API do arXiv, processado por LLM (Claude Haiku, temperature=0).
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+```
+
+# Conclusão
+
+Foram extraídos **100** artigos do arXiv no período de 2026-07-04 a 2026-07-11, classificados
+por um LLM com saída estruturada. Destes, **90** (90.0\%) foram identificados
+como relevantes para aplicações de negócios. O pipeline automatizado — extração via API,
+classificação por LLM com schema Pydantic e geração do relatório — demonstra a viabilidade
+de monitorar o arXiv com foco em oportunidades de negócio, seguindo a metodologia CRISP-DM.
+
+O custo estimado da classificação foi de **\$0.0200**, tornando
+o processo viável para operações semanais.
+
+# Referências
+
+::: {#refs}
+:::

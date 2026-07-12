@@ -1,0 +1,154 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "---\n",
+        "title: \"Meu Relatório\"\n",
+        "author: \"Aluno(a)\"\n",
+        "date: today\n",
+        "format:\n",
+        "  html:\n",
+        "    toc: true\n",
+        "    code-fold: true\n",
+        "    theme: cosmo\n",
+        "  pdf:\n",
+        "    pdf-engine: xelatex\n",
+        "    geometry: margin=2.5cm\n",
+        "    fontsize: 11pt\n",
+        "execute:\n",
+        "  echo: true\n",
+        "  warning: false\n",
+        "  message: false\n",
+        "---\n",
+        "\n",
+        "## Introdução\n",
+        "\n",
+        "Relatório de exemplo usando Quarto com Python. Cada número e figura abaixo é gerado por código — **nenhum valor é digitado à mão**.\n",
+        "\n",
+        "## Dados simulados"
+      ],
+      "id": "feb61291"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "import numpy as np\n",
+        "import pandas as pd\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "rng = np.random.default_rng(42)\n",
+        "n = 50\n",
+        "\n",
+        "df = pd.DataFrame({\n",
+        "    \"receita\": rng.uniform(100, 500, size=n),\n",
+        "    \"custo\": rng.uniform(50, 300, size=n),\n",
+        "    \"canal\": rng.choice([\"Organico\", \"Pago\", \"Indicacao\"], size=n),\n",
+        "})\n",
+        "df[\"lucro\"] = df[\"receita\"] - df[\"custo\"]\n",
+        "df.head(10)"
+      ],
+      "id": "225132ab",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Resumo estatístico"
+      ],
+      "id": "bf951895"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "df.groupby(\"canal\")[[\"receita\", \"custo\", \"lucro\"]].agg([\"mean\", \"std\"]).round(2)"
+      ],
+      "id": "93e4b8ee",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Figura: distribuição do lucro por canal"
+      ],
+      "id": "5ec60a5a"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| label: fig-lucro\n",
+        "#| fig-cap: Distribuição do lucro por canal de aquisição\n",
+        "\n",
+        "fig, ax = plt.subplots()\n",
+        "for canal, dados in df.groupby(\"canal\"):\n",
+        "    ax.hist(dados[\"lucro\"], alpha=0.6, label=canal, bins=12)\n",
+        "ax.set_xlabel(\"Lucro\")\n",
+        "ax.set_ylabel(\"Frequência\")\n",
+        "ax.legend()\n",
+        "plt.tight_layout()\n",
+        "plt.show()"
+      ],
+      "id": "fig-lucro",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Figura: receita vs custo"
+      ],
+      "id": "c9fde591"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "#| label: fig-disp\n",
+        "#| fig-cap: Relação entre receita e custo\n",
+        "\n",
+        "fig, ax = plt.subplots()\n",
+        "cores = {\"Organico\": \"#2ecc71\", \"Pago\": \"#e74c3c\", \"Indicacao\": \"#3498db\"}\n",
+        "for canal, dados in df.groupby(\"canal\"):\n",
+        "    ax.scatter(dados[\"custo\"], dados[\"receita\"], label=canal, color=cores[canal], alpha=0.7)\n",
+        "ax.set_xlabel(\"Custo\")\n",
+        "ax.set_ylabel(\"Receita\")\n",
+        "ax.legend()\n",
+        "plt.tight_layout()\n",
+        "plt.show()"
+      ],
+      "id": "fig-disp",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Conclusão\n",
+        "\n",
+        "- Lucro médio: **R$ {python}df['lucro'].mean().round(2)**\n",
+        "- Canal mais lucrativo: **{python}df.groupby('canal')['lucro'].mean().idxmax()**"
+      ],
+      "id": "e38d0216"
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "name": "python3",
+      "language": "python",
+      "display_name": "Python 3 (.venv)",
+      "path": "C:\\Users\\Edinei\\AppData\\Roaming\\jupyter\\kernels\\python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}

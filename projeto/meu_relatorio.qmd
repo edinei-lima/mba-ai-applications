@@ -1,0 +1,85 @@
+---
+title: "Meu Relatório"
+author: "Aluno(a)"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+  pdf:
+    pdf-engine: xelatex
+    geometry: margin=2.5cm
+    fontsize: 11pt
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Introdução
+
+Relatório de exemplo usando Quarto com Python. Cada número e figura abaixo é gerado por código — **nenhum valor é digitado à mão**.
+
+## Dados simulados
+
+```{python}
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(42)
+n = 50
+
+df = pd.DataFrame({
+    "receita": rng.uniform(100, 500, size=n),
+    "custo": rng.uniform(50, 300, size=n),
+    "canal": rng.choice(["Organico", "Pago", "Indicacao"], size=n),
+})
+df["lucro"] = df["receita"] - df["custo"]
+df.head(10)
+```
+
+## Resumo estatístico
+
+```{python}
+df.groupby("canal")[["receita", "custo", "lucro"]].agg(["mean", "std"]).round(2)
+```
+
+## Figura: distribuição do lucro por canal
+
+```{python}
+#| label: fig-lucro
+#| fig-cap: "Distribuição do lucro por canal de aquisição"
+
+fig, ax = plt.subplots()
+for canal, dados in df.groupby("canal"):
+    ax.hist(dados["lucro"], alpha=0.6, label=canal, bins=12)
+ax.set_xlabel("Lucro")
+ax.set_ylabel("Frequência")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+## Figura: receita vs custo
+
+```{python}
+#| label: fig-disp
+#| fig-cap: "Relação entre receita e custo"
+
+fig, ax = plt.subplots()
+cores = {"Organico": "#2ecc71", "Pago": "#e74c3c", "Indicacao": "#3498db"}
+for canal, dados in df.groupby("canal"):
+    ax.scatter(dados["custo"], dados["receita"], label=canal, color=cores[canal], alpha=0.7)
+ax.set_xlabel("Custo")
+ax.set_ylabel("Receita")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+## Conclusão
+
+- Lucro médio: **R$ {python}df['lucro'].mean().round(2)**
+- Canal mais lucrativo: **{python}df.groupby('canal')['lucro'].mean().idxmax()**
