@@ -143,11 +143,11 @@ def gerar_qmd(estatisticas: dict, artigos: list[dict]) -> None:
     tbl_artigos_rows = ""
     for art in artigos:
         data = art.get("data_publicacao", "")[:10]
-        titulo = art.get("titulo_pt", art.get("titulo", "")).replace("|", "\\|").replace("_", "\\_")[:50]
-        area_tech = art.get("area_tecnologica", "N/D").replace("_", "\\_")
-        mat_val = art.get("maturidade", "N/D").replace("_", "\\_")
-        relev = art.get("relevancia_negocio", "N/D").replace("_", "\\_")
-        resumo = art.get("resumo_executivo_pt", "")[:80].replace("|", "\\|").replace("_", "\\_")
+        titulo = art.get("titulo_pt", art.get("titulo", "")).replace("|", "\\|").replace("_", "\\_")[:35]
+        area_tech = art.get("area_tecnologica", "N/D").replace("_", "\\_")[:18]
+        mat_val = art.get("maturidade", "N/D").replace("_", "\\_")[:15]
+        relev = art.get("relevancia_negocio", "N/D").replace("_", "\\_")[:8]
+        resumo = art.get("resumo_executivo_pt", "")[:55].replace("|", "\\|").replace("_", "\\_")
         tbl_artigos_rows += f"    {data} & {titulo} & {area_tech} & {mat_val} & {relev} & {resumo} \\\\\n"
 
     # Linhas para busca
@@ -482,18 +482,18 @@ A Tabela @tbl-artigos lista todos os artigos extraídos e classificados no perí
 ```{{=latex}}
 \\begin{{table}}[H]
 \\centering
-\\footnotesize
+\\scriptsize
 \\begin{{threeparttable}}
 \\caption{{Todos os artigos extraídos no período.}}
 \\label{{tbl-artigos}}
-\\begin{{tabular}}{{llllll}}
+\\begin{{tabular}}{{cp{{1.2cm}}p{{3.5cm}}p{{2cm}}p{{1.8cm}}p{{1.2cm}}p{{4cm}}}}
 \\toprule
-Data & Título & Área & Maturidade & Relevância & Resumo \\\\
+Data & Título & Área & Maturidade & Relev. & Resumo \\\\
 \\midrule
 {tbl_artigos_rows}
 \\bottomrule
 \\end{{tabular}}
-\\begin{{tablenotes}}\\footnotesize
+\\begin{{tablenotes}}\\scriptsize
 \\item Fonte: API do arXiv, processado por LLM (Claude Haiku, temperature=0).
 \\end{{tablenotes}}
 \\end{{threeparttable}}
