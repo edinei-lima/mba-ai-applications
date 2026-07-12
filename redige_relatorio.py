@@ -148,7 +148,15 @@ def gerar_qmd(estatisticas: dict, artigos: list[dict]) -> None:
         mat_val = art.get("maturidade", "N/D").replace("_", "\\_")[:15]
         relev = art.get("relevancia_negocio", "N/D").replace("_", "\\_")[:8]
         resumo = art.get("resumo_executivo_pt", "")[:55].replace("|", "\\|").replace("_", "\\_")
-        tbl_artigos_rows += f"    {data} & {titulo} & {area_tech} & {mat_val} & {relev} & {resumo} \\\\\n"
+        link = art.get("link_pdf", art.get("arxiv_id", "")).replace("_", "\\_")
+        # Criar link clicável
+        if link and "arxiv.org" in link:
+            link_latex = f"\\href{{{link}}}{{Acessar}}"
+        elif link:
+            link_latex = f"\\href{{https://arxiv.org/abs/{link}}}{{Acessar}}"
+        else:
+            link_latex = "N/A"
+        tbl_artigos_rows += f"    {data} & {titulo} & {area_tech} & {mat_val} & {relev} & {resumo} & {link_latex} \\\\\n"
 
     # Linhas para busca
     linhas_busca = "\n".join(f"    - `{c}`" for c in cat.keys())
@@ -183,6 +191,8 @@ header-includes:
     \\usepackage{{booktabs}}
     \\usepackage{{threeparttable}}
     \\usepackage{{caption}}
+    \\usepackage{{pdflscape}}
+    \\usepackage{{rotating}}
     \\captionsetup[table]{{skip=4pt}}
     \\renewcommand{{\\maketitle}}{{}}
     \\AtBeginEnvironment{{Shaded}}{{\\footnotesize}}
@@ -250,21 +260,21 @@ metodologia CRISP-DM.
 Este relatório semanal analisa artigos científicos publicados no arXiv nas categorias
 de Inteligência Artificial, Machine Learning, Processamento de Linguagem Natural e
 Visão Computacional. O pipeline automatizado extrai, classifica e gera um relatório
-executivo para tomadores de decisão, seguindo a metodologia CRISP-DM.
+executivo para tomadores de decisão, seguindo a metodologia CRISP-DM [@crispdm2023].
 
 # Metodologia
 
-Seguindo o fluxo **CRISP-DM**: (i) *entendimento do negócio* — identificar artigos
+Seguindo o fluxo **CRISP-DM** [@crispdm2023]: (i) *entendimento do negócio* — identificar artigos
 relevantes para aplicações de negócios em IA/ML/NLP/CV; (ii) *dados* — API pública do
-arXiv, período de {de} a {ate}; (iii) *preparação* — extração com retry e filtragem por
-data; (iv) *modelagem* — classificação via Claude Haiku com schema Pydantic; (v) *avaliação* —
+arXiv [@arxivapi2024], período de {de} a {ate}; (iii) *preparação* — extração com retry e filtragem por
+data; (iv) *modelagem* — classificação via Claude Haiku [@anthropic2024] com schema Pydantic [@pydantic2024]; (v) *avaliação* —
 análise estatística dos resultados; (vi) *implantação* — este paper reprodutível.
 
 # Dados
 
 ## Parâmetros da extração
 
-A extração foi realizada utilizando a API pública do arXiv com os seguintes parâmetros:
+A extração foi realizada utilizando a API pública do arXiv [@arxiv2024] com os seguintes parâmetros:
 
 - **URL base:** `https://export.arxiv.org/api/query`
 - **Período:** últimos 7 dias ({de} a {ate})
@@ -275,7 +285,7 @@ A extração foi realizada utilizando a API pública do arXiv com os seguintes p
 
 ## Schema de classificação
 
-Cada artigo foi classificado com o seguinte schema Pydantic:
+Cada artigo foi classificado com o seguinte schema Pydantic [@pydantic2024]:
 
 ```{{python}}
 #| echo: true
@@ -322,7 +332,7 @@ Indicador & Valor \\\\
 
 ## Distribuição por categoria arXiv
 
-A Tabela @tbl-categoria mostra a distribuição de artigos por categoria arXiv.
+A Tabela @tbl-categoria mostra a distribuição de artigos por categoria arXiv [@arxiv2024].
 
 ```{{=latex}}
 \\begin{{table}}[H]
@@ -346,7 +356,7 @@ Categoria & Quantidade \\\\
 
 ## Distribuição por área tecnológica
 
-A Tabela @tbl-area apresenta a distribuição por área tecnológica identificada pelo LLM.
+A Tabela @tbl-area apresenta a distribuição por área tecnológica identificada pelo LLM [@anthropic2024].
 
 ```{{=latex}}
 \\begin{{table}}[H]
@@ -392,6 +402,44 @@ Maturidade & Quantidade \\\\
 \\end{{table}}
 ```
 
+## Evolução diária
+
+A Figura @fig-diaria mostra a distribuição de publicações por dia no período analisado.
+
+```{{python}}
+#| echo: false
+#| label: fig-diaria
+#| fig-cap: "Publicações por dia no período analisado."
+import json
+import matplotlib.pyplot as plt
+from collections import Counter
+from pathlib import Path
+
+# Carregar dados do classificado.json
+classificado = Path("classificado.json")
+dados = json.loads(classificado.read_text(encoding="utf-8"))
+artigos = dados.get("artigos", [])
+
+datas = Counter(a.get("data_publicacao", "")[:10] for a in artigos)
+datas_ordenadas = sorted(datas.items())
+
+fig, ax = plt.subplots(figsize=(8, 4))
+barras = ax.bar([d[0] for d in datas_ordenadas], [d[1] for d in datas_ordenadas], color="#18a0d7")
+
+# Adicionar rótulos de dados
+for barra in barras:
+    altura = barra.get_height()
+    ax.text(barra.get_x() + barra.get_width()/2., altura + 0.5,
+            f'{{int(altura)}}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+ax.set_xlabel("Data")
+ax.set_ylabel("Quantidade")
+ax.set_title("Publicações por dia")
+plt.xticks(rotation=45, ha="right")
+plt.tight_layout()
+plt.show()
+```
+
 ## Top 5 artigos por relevância
 
 A Tabela @tbl-top5 apresenta os 5 artigos com maior relevância para negócios.
@@ -416,40 +464,9 @@ A Tabela @tbl-top5 apresenta os 5 artigos com maior relevância para negócios.
 \\end{{table}}
 ```
 
-## Evolução diária
-
-A Figura @fig-diaria mostra a distribuição de publicações por dia no período analisado.
-
-```{{python}}
-#| echo: false
-#| label: fig-diaria
-#| fig-cap: "Publicações por dia no período analisado."
-import json
-import matplotlib.pyplot as plt
-from collections import Counter
-from pathlib import Path
-
-# Carregar dados do classificado.json
-classificado = Path("classificado.json")
-dados = json.loads(classificado.read_text(encoding="utf-8"))
-artigos = dados.get("artigos", [])
-
-datas = Counter(a.get("data_publicacao", "")[:10] for a in artigos)
-datas_ordenadas = sorted(datas.items())
-
-fig, ax = plt.subplots(figsize=(8, 4))
-ax.bar([d[0] for d in datas_ordenadas], [d[1] for d in datas_ordenadas], color="#18a0d7")
-ax.set_xlabel("Data")
-ax.set_ylabel("Quantidade")
-ax.set_title("Publicações por dia")
-plt.xticks(rotation=45, ha="right")
-plt.tight_layout()
-plt.show()
-```
-
 ## Custo estimado
 
-A Tabela @tbl-custo apresenta a estimativa de custo da classificação via API Anthropic.
+A Tabela @tbl-custo apresenta a estimativa de custo da classificação via API Anthropic [@anthropic2024].
 
 ```{{=latex}}
 \\begin{{table}}[H]
@@ -478,35 +495,39 @@ Custo total & \\${custo.get('custo_total', 0):.4f} \\\\
 ## Todos os artigos
 
 A Tabela @tbl-artigos lista todos os artigos extraídos e classificados no período.
+Os links de acesso estão disponíveis na coluna "Link".
 
 ```{{=latex}}
+\\begin{{landscape}}
 \\begin{{table}}[H]
 \\centering
 \\scriptsize
 \\begin{{threeparttable}}
 \\caption{{Todos os artigos extraídos no período.}}
 \\label{{tbl-artigos}}
-\\begin{{tabular}}{{cp{{1.2cm}}p{{3.5cm}}p{{2cm}}p{{1.8cm}}p{{1.2cm}}p{{4cm}}}}
+\\begin{{tabular}}{{cp{{1.2cm}}p{{3.5cm}}p{{2cm}}p{{1.8cm}}p{{1.2cm}}p{{4cm}}p{{2cm}}}}
 \\toprule
-Data & Título & Área & Maturidade & Relev. & Resumo \\\\
+Data & Título & Área & Maturidade & Relev. & Resumo & Link \\\\
 \\midrule
 {tbl_artigos_rows}
 \\bottomrule
 \\end{{tabular}}
 \\begin{{tablenotes}}\\scriptsize
 \\item Fonte: API do arXiv, processado por LLM (Claude Haiku, temperature=0).
+\\item Acesse o artigo completo clicando no link.
 \\end{{tablenotes}}
 \\end{{threeparttable}}
 \\end{{table}}
+\\end{{landscape}}
 ```
 
 # Conclusão
 
 Foram extraídos **{total}** artigos do arXiv no período de {de} a {ate}, classificados
-por um LLM com saída estruturada. Destes, **{relevantes}** ({pct}\\%) foram identificados
+por um LLM com saída estruturada [@anthropic2024]. Destes, **{relevantes}** ({pct}\\%) foram identificados
 como relevantes para aplicações de negócios. O pipeline automatizado — extração via API,
-classificação por LLM com schema Pydantic e geração do relatório — demonstra a viabilidade
-de monitorar o arXiv com foco em oportunidades de negócio, seguindo a metodologia CRISP-DM.
+classificação por LLM com schema Pydantic [@pydantic2024] e geração do relatório — demonstra a viabilidade
+de monitorar o arXiv [@arxiv2024] com foco em oportunidades de negócio, seguindo a metodologia CRISP-DM [@crispdm2023].
 
 O custo estimado da classificação foi de **\\${custo.get('custo_total', 0):.4f}**, tornando
 o processo viável para operações semanais.
